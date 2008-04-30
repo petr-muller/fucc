@@ -149,23 +149,23 @@ class Director:
     self.MAXDEPTH=5
     self.functionUsage = {}
     self.type_to_format = { 
-        'unsigned char'     : "%u",
-        'unsigned short'    : "%u",
+        'unsigned char'     : "%hhu",
+        'unsigned short'    : "%hu",
         'unsigned int'      : "%u",
-        'unsigned long'     : "%u",
-        'unsigned long long': "%u",
-        'signed char'       : "%u",
-        'signed short'      : "%i",
+        'unsigned long'     : "%lu",
+        'unsigned long long': "%llu",
+        'signed char'       : "%hhi",
+        'signed short'      : "%hi",
         'signed int'        : "%i",
-        'signed long'       : "%i",
-        'signed long long'  : "%i",
+        'signed long'       : "%li",
+        'signed long long'  : "%lli",
         'float'            : "%G",
         'double'           : "%G",
-        ' char'             : "%u",
-        ' short'            : "%u",
-        ' int'              : "%u",
-        ' long'             : "%u",
-        ' long long'        : "%u"
+        ' char'             : "%hhi",
+        ' short'            : "%hi",
+        ' int'              : "%i",
+        ' long'             : "%li",
+        ' long long'        : "%lli"
         }
     self.basic_type_hierarchy = {
         'unsigned char' : 0,
