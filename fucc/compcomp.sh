@@ -50,7 +50,7 @@ do
 
 # GENERATOR="other/randprog/a.out >$TESTCASE_DIRECTORY/tc$TESTCASE_NUMBER.c"
  GENERATOR="gensen/main.py $GRAMMAR_FILE 0  >$TESTCASE_DIRECTORY/tc$TESTCASE_NUMBER.c"
-# GENERATOR="dd if=/dev/urandom of=$TESTCASE_DIRECTORY/tc$TESTCASE_NUMBER.c bs=1024 count=1"
+# GENERATOR="dd if=/dev/urandom of=$TESTCASE_DIRECTORY/tc$TESTCASE_NUMBER.c bs=1024 count=1 >/dev/null 2>&1 "
 
   BUILDER=builder/builder.py
 
@@ -99,6 +99,7 @@ do
   then
     CF=$((CF+1))
     tar cfz $CFDIR/$TESTCASE_NUMBER.tar.gz testcase/*
+    echo -e "\n=============================== $TESTCASE_NUMBER ==============================\n" >> $CFDIR/report
     for file in testcase/*.build
     do
       echo "=============== $file ===============" >> $CFDIR/report
@@ -110,6 +111,7 @@ do
   then
     S8=$((S8+1))
     tar cfz $S8DIR/$TESTCASE_NUMBER.tar.gz testcase/*
+    echo -e "\n=============================== $TESTCASE_NUMBER ==============================\n" >> $S8DIR/report
     for file in testcase/*.output
     do
       echo "=============== $file ===============" >> $S8DIR/report

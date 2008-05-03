@@ -207,7 +207,7 @@ class Director:
 
   def checkIfNotOverused(self, iden):
     self.functionUsage[iden] = self.functionUsage.get(iden,0) + 1
-    if self.functionUsage[iden] > 3:
+    if self.functionUsage[iden] > 1:
       return False
     else:
       return True
