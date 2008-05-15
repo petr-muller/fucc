@@ -46,11 +46,9 @@ S8=0
 for run in `seq $COUNT`
 do  
   rm -f $TESTCASE_DIRECTORY/*
-  GRAMMAR_FILE=gensen/grammars/c_grammar_modified.g
+  GRAMMAR_FILE=spitter/grammars/c_grammar_modified.g
 
-# GENERATOR="other/randprog/a.out >$TESTCASE_DIRECTORY/tc$TESTCASE_NUMBER.c"
- GENERATOR="gensen/main.py $GRAMMAR_FILE 0  >$TESTCASE_DIRECTORY/tc$TESTCASE_NUMBER.c"
-# GENERATOR="dd if=/dev/urandom of=$TESTCASE_DIRECTORY/tc$TESTCASE_NUMBER.c bs=1024 count=1 >/dev/null 2>&1 "
+  GENERATOR="spitter/main.py $GRAMMAR_FILE 0  >$TESTCASE_DIRECTORY/tc$TESTCASE_NUMBER.c"
 
   BUILDER=builder/builder.py
 
