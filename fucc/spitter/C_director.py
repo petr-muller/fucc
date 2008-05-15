@@ -25,16 +25,16 @@ def plugLogger(logger):
   SemanticUnit.logger = logger
 
 class SymbolStack:
-  """Simuluje zasobnik s nekterymi funkcemi navic"""
+  """Represents a stack"""
   def __init__(self):
     self.stack = []
 
   def append(self,symbol):
-    """Prida symbol ze zasobniku"""
+    """Appends symbol to a stack"""
     self.stack.append(symbol)
 
   def pop(self):
-    """Odebere symbol ze zasobniku a vrati ho"""
+    """Pops symbol from the top of the stack"""
     if len(self.stack) > 0:
       return self.stack.pop()
     else:
@@ -147,6 +147,8 @@ class Director:
     self.symbolst = SymbolStack()
     self.expressionDepth = 0
     self.MAXDEPTH=5
+    self.MAXFUNCTION=1
+    self.EXPRDEPTH=5
     self.functionUsage = {}
     self.type_to_format = { 
         'unsigned char'     : "%hhu",
@@ -189,30 +191,45 @@ class Director:
     self.unitialized_vars = []
 
   def setMaxDepth(self, depth):
+    """Sets maximum number of block repetition"""
     self.MAXDEPTH = depth
 
+  def setMaxFunction(self, calls):
+    """Set maximum number of the same function calls"""
+    self.MAXFUNCTION = calls
+
+  def setExprDepth(self, depth):
+    """Sets treshold from which Director starts to prefer values over expressions"""
+    self.EXPRDEPTH = depth
+
   def counter(self):
+    """Counter for block identification"""
+    #FIXME: Migrate to Semantic unit
     self.cnt += 1
     return self.cnt
 
   def log(self, priority, message,indent=0):
+    """Log a message, considering priority"""
     if Director.logger is None:
       print >> sys.stderr, message
     else:
       Director.logger.log(priority, message,indent)
 
   def loadGrammar(self, my_grammar):
+    """Loads a grammar from Grammar instance and checks it's sanity"""
     self.grammar = my_grammar
     self.grammar.checkSanity()
 
   def checkIfNotOverused(self, iden):
+    """Check if a function is not called too much"""
     self.functionUsage[iden] = self.functionUsage.get(iden,0) + 1
-    if self.functionUsage[iden] > 1:
+    if self.functionUsage[iden] > self.MAXFUNCTION:
       return False
     else:
       return True
 
   def findTypeConstraint(self):
+    """Find nearest type constraint"""
     types = [ x.lang_type for x in self.scopest.stack ]
     types.reverse()
     for i in types:
@@ -220,6 +237,7 @@ class Director:
         return i
 
   def addVariableToNearestScope(self,type,name):
+    """Adds a variable to nearest SU in a stack, which has a variable scope"""
     for i in range(1,len(self.scopest.stack)+1):
       if self.scopest.stack[-i].variables == None:
         continue
@@ -230,6 +248,7 @@ class Director:
     raise SemanticError("Haven't found a scope to add a variable. This shouldn't be possible :)")
   
   def addFunctionToNearestScope(self,type,name,params):
+    """Adds a function to nearest SU in a scope, which has a function scope"""
     for i in range(1,len(self.scopest.stack)+1):
       if self.scopest.stack[-i].functions == None:
         continue
@@ -238,8 +257,9 @@ class Director:
       return
 
     raise SemanticError("Haven't found a scope to add a function. This shouldn't be possible :)")
- 
+  
   def typeOfVariable(self,variable):
+    """Gets type of a variable"""
     for i in range(1,len(self.scopest.stack)+1):
       if self.scopest.stack[-i].variables is not None:
         for type in self.scopest.stack[-i].variables.keys():
@@ -248,12 +268,15 @@ class Director:
               return type
 
   def getParamType(self, function, param_index):
+    """Gets type of parameter param_index of function"""
     for type in self.scopest.stack[0].functions.keys():
       for func_tuple in self.scopest.stack[0].functions[type]:
         if func_tuple[0] == function:
           return func_tuple[1][param_index]
 
   def propagateType(self, type):
+    """If we create a value of some type, try to assign this type to some parent
+       SU which has the type still nondetermined"""
     for i in range(2,len(self.scopest.stack)+1):
       if self.scopest.stack[-i].lang_type == False:
         self.scopest.stack[-i].lang_type == type
@@ -265,10 +288,12 @@ class Director:
       if self.scopest.stack[-1].lang_type == type:
         break
       else:
+        #FIXME: this is probably bogus. fction param in an expression can have different type
         raise SemanticError("Type mismatch")
     return
 
   def assignTypeToTop(self, type):
+    """Assigns a data type to SU on top of a stack"""
     if self.scopest.top().lang_type == False or self.scopest.top().lang_type == type:
       self.scopest.top().lang_type = type
       self.propagateType(type)
@@ -276,28 +301,35 @@ class Director:
       raise SemanticError("Attempt to assign type to semantic unit which doesn't accept type")
 
   def getCurrentReturnType(self):
+    """Gets return type of a function inside it's block"""
+    #FIXME: not 1 - should be searching through a stack
     return self.scopest.stack[1].ret_type 
 
   def assignReturnTypeToTop(self, type):
+    """Assigns return type to SU on top of a stack"""
     if self.scopest.top().ret_type != None:
       self.scopest.top().ret_type = type
     else:
       raise SemanticError("Attempt to assign type to semantic unit which doesn't accept type")
 
   def assignIdentifierToTop(self, iden):
+    """Assigns indetifier to SU on top of a stack"""
     if self.scopest.top().identifier != None:
       self.scopest.top().identifier = iden
     else:
       raise SemanticError("Attempt to assign identifier to semantic unit which doesn't accept identifier")
 
   def printfVariablesFromScope(self, scope):
+    """Generates a printf command for all variables defined in this scope"""
     exp = ""
     for type in scope.variables.keys():
       for variable in scope.variables[type]:
+        #FIXME: Would be nice to have this somewhere defined as data, not code
         exp += '\n  printf("%s: %s\\n", %s);' % (variable, self.type_to_format[type], variable)
     return exp
 
   def allVariablesList(self):
+    """Returns a list of all variables visible in this place"""
     returneth = []
     for i in range(1,len(self.scopest.stack)+1):
       if self.scopest.stack[-i].variables is not None:
@@ -306,6 +338,7 @@ class Director:
     return returneth
   
   def getAllVariablesOfType(self,supertype):
+    """Returns list of all variables of certain type (or compatible) visible in this place"""
     returneth = []
     for i in range(1, len(self.scopest.stack)+1):
       if self.scopest.stack[-i].variables is not None:
@@ -315,6 +348,7 @@ class Director:
     return returneth
 
   def getAllFunctionsOfType(self,supertype):
+    """Returns all functions of certain type (or compatible) visible in this place"""
     returneth = []
     for i in range(1, len(self.scopest.stack)+1):
       if self.scopest.stack[-i].functions is not None:
@@ -324,6 +358,7 @@ class Director:
     return returneth
 
   def canBe(self,supertype,type):
+    """Determines if two types are compatible"""
     if supertype == True or supertype == False or supertype == type:
       return True
     if supertype.strip() not in self.basic_type_hierarchy or type.strip() not in self.basic_type_hierarchy:
@@ -332,37 +367,46 @@ class Director:
     return self.basic_type_hierarchy[type.strip()] <= self.basic_type_hierarchy[supertype.strip()]
   
   def initializeAllToNull(self):
+    """Generates a initializing statements for all unitialized variables"""
     line = "";
     for var in self.unitialized_vars:
       line = line + "%s %s = %s;\n" % (var[0], var[1], 1);
     return line;
 
   def logStackSize(self):
+    """Logs a size of stack of semantic units"""
     self.log(1, "Semantic stack size: %s, Top: %s" % (len(self.scopest.stack), self.scopest.top().name))
 
   def pushSemanticUnit(self, SU):
+    """Adds SU to a stack"""
     self.scopest.append(SU)
     self.logStackSize()
 
   def popSemanticUnit(self):
+    """Popds SU from a stack"""
     self.scopest.pop()
     self.logStackSize()
 
   def getSymbol(self,symbol):
+    """This is a method generator calls to get a list of productions for symbol"""
     self.log(2, "Selecting production for symbol <%s>" % symbol)
+    # if we generate a constant, we make sure we generate only those of compatible type
     if symbol == "constant":
       candidates = copy.deepcopy(self.grammar.symbols[symbol])
       supertype = self.findTypeConstraint()
       self.log(2, "Constraint found: <%s>" % supertype)
       for production in candidates:
         for symb in production['production'].symbols:
-#FIXME variable symbols
+        #FIXME variable symbols
+        # do not generate floats in non-float expresions
           if symb.name == 'floating_constant':
             if supertype not in [ 'float', 'double', False ]:
               self.log(2,"Stripped production with floating point constant")
               production['weight'] = 0
             else:
+              # if we are in float expression, triple the probability (in float EXPR we want floats
               production['weight'] *= 3
+    # if we want some existing value, then we should use variables and fction calls of compatible type
     elif symbol == "existing_value":
       candidates = copy.deepcopy(self.grammar.symbols[symbol])
       supertype = self.findTypeConstraint()
@@ -373,9 +417,13 @@ class Director:
       self.log(1, "We could use following functions: %s for type %s. All functions: %s" % (possible_functions, supertype, self.scopest.stack[0].functions))
       for var in possible_variables:
         self.log(1, "Appending identifier %s to production list")
+        # creating production with a variable
         prod = { "production" : grammar.Production([grammar.Symbol(var, grammar.TERMINAL)]), "weight" : 1 }
         candidates.append(prod)
       for var in possible_functions:
+        # creating productions with a function call
+        # params are represented as nonterminal <param/function/index>
+        # when we get a reportStart for such symbol, we create expression with type of index-th parameter of function
         if self.checkIfNotOverused(var[0]):
           self.log(1, "Appending function %s to production list")
           prod = { "production" : grammar.Production([grammar.Symbol(var[0]+'(', grammar.TERMINAL)] +
@@ -386,10 +434,13 @@ class Director:
 
           candidates.append(prod)
       candidates[0]['weight'] = len(candidates)
-      if self.expressionDepth > 5:
+      if self.expressionDepth > self.EXPRDEPTH:
+        # prefer constants if we are too deep in an expression
         candidates[0]['weight'] += self.expressionDepth - 5
 
     elif symbol[:11] == "CDIR_param/":
+      # this represents a generator's request for parameter of a function
+      # treat as expression
       fction, index = symbol[11:].split('/')
       self.nextExpression = self.getParamType(fction, int(index))
       symbols = [grammar.Symbol('expression', grammar.NONTERMINAL)]
@@ -397,6 +448,8 @@ class Director:
       candidates = []
       candidates.append({ "production" : prod, "weight" : 1 })
     elif symbol == "assignment":
+      # Request for assignment. give some variable for the left side. 
+      # If we don't have any, then create declaration instead
       available_variables = self.allVariablesList()
       if len(available_variables) == 0:
         candidates = self.grammar.symbols["ass_to_dec_transition"]
@@ -414,8 +467,11 @@ class Director:
           candidates.append({"production" : grammar.Production([a]), 'weight' : 1})
 
     elif symbol == "expression":
+    # expression.
+    # at the beginning, prefer expressions over values
+    # with increasing depth, start prefering values
       unary_probability = 1
-      binary_probability = 5 - self.expressionDepth
+      binary_probability = self.EXPRDEPTH - self.expressionDepth
 
       if binary_probability < 1:
         unary_probability += 1 - binary_probability
@@ -425,6 +481,7 @@ class Director:
       candidates[1]['weight'] = binary_probability
 
     elif symbol == "return":
+      # generate a return statement with correct type of return value
       candidates = []
       self.unitialized_vars.append((' int', 'DEPTH_stopper%s' % self.cnt))
       symbols = [grammar.Symbol('DEPTH_stopper%s--;\n' % self.cnt, grammar.TERMINAL),
@@ -443,6 +500,8 @@ class Director:
 # def __init__(self, name, variables=None, identifier=None,lang_type=None,ret_type=None,functions=None,params=None): 
 
   def reportStart(self,symbol):
+    """Generator gives an echo when starting generating a symbol via this method
+       It mainly creates proper SU for symbols which create them"""
     self.log(1, "Starting to generate symbol <%s>" % symbol, 1)
     if symbol == "declaration":
       self.pushSemanticUnit(SemanticUnit("SimpleDeclaration", None, True, False))
@@ -476,6 +535,8 @@ class Director:
     self.symbolst.append(symbol)
   
   def reportFinish(self,symbol,expanded):
+    """Generator reports that it finished generation of some symbol via this method
+       Director can modify it and return it to generator"""
     if self.scopest.top().name == 'SimpleDeclaration' or self.scopest.top().name == "AssigningDeclaration":
       if symbol == "type":
         self.assignTypeToTop(expanded)

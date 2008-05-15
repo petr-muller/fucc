@@ -21,13 +21,32 @@ import grammar
 import logger
 import C_director
 import generator
+from optparse import OptionParser
 
 if __name__ == "__main__":
-    gram_file = open(sys.argv[1])
+
+    opt = OptionParser()
+    opt.add_option("-g", "--grammar", dest="grammar",
+                          help="use grammar defined in FILE", metavar="FILE")
+    opt.add_option("-v", "--verbose", default=0, dest="verbose",
+                          help="Verbosity level (0-2)", metavar="LEVEL")
+    opt.add_option("-b", "--blockdepth", default=5, dest="bd",
+                          help="Sets maximum of block repetition", metavar="DEPTH")
+    opt.add_option("-f", "--functions", default=1, dest="fc",
+                          help="Sets maximum of single function calls", metavar="MAX")
+    opt.add_option("-e", "--exptdepth", default=5, dest="ed",
+                          help="Sets average recursivity of expressions", metavar="DEPTH")
+
+    (options, args) = opt.parse_args()
+    if not options.grammar:
+      print >> sys.stderr, "Grammar file must be supplied"
+      sys.exit(1)
+
+    gram_file = open(options.grammar)
     gram = gram_file.read()
     gram_file.close()
 
-    my_logger = logger.Logger(sys.stdout, sys.stderr, int(sys.argv[2]))
+    my_logger = logger.Logger(sys.stdout, sys.stderr, int(options.verbose))
     grammar.plugLogger(my_logger)
 
     my_grammar = yacc.parse(gram)
@@ -35,8 +54,9 @@ if __name__ == "__main__":
     direct = C_director.Director()
     C_director.plugLogger(my_logger)
     direct.loadGrammar(my_grammar)
-    direct.setMaxDepth(5)
-
+    direct.setMaxDepth(int(options.bd))
+    direct.setMaxFunction(int(options.fc))
+    direct.setExprDepth(int(options.ed))
 
     my_gen = generator.Generator()
     generator.plugLogger(my_logger)
