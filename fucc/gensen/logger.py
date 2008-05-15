@@ -1,4 +1,3 @@
-
 #------------------------------------------------------------------------------#
 #    This file is part of fucc.                                                #
 #                                                                              #
@@ -17,18 +16,24 @@
 import sys
 
 class Logger:
+  # o/output    - standard output for program
+  # l/loger     - place where log should go
+  # p/priority  - determines treshold of how serious messages should be logged
   def __init__(self, o = None, l = None, p = 1 ):
     self.output   = o
     self.loger    = l
     self.priority = p
     self.indent = 0
-
-  def __isValid(self):
+  
+  # private method, determines if the instance is valid
+  def _isValid(self):
     return self.output and self.loger
-
+  
+  # spits something to output, whatever it is
   def spit(self, message):
     print >> self.output, message,
 
+  # log by priority and indentation
   def log(self, priority, message, indent=0):
     if priority <= self.priority:
       if indent < 0:
@@ -36,7 +41,9 @@ class Logger:
       print >> self.loger, " "*self.indent + message
       if indent > 0:
         self.indent += indent
+
+  # close all file handlers
   def kill(self):
-    if self.__isValid():
+    if self._isValid():
       self.output.close()
       self.output.close()

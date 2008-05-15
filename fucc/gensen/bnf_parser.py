@@ -21,17 +21,21 @@ import sys
 import grammar
 
 tokens = (
-        "NT",
-        "OPTNT",
-        "WHITESPACE",
-        "TERMINAL",
-        "SEPARATOR",
-        "FINISHER",
-        "ASSIGNATOR",
-        "OPTWEIGHT",
-        "WEIGHTATOR",
-        "WEIGHTS"
+        "NT",         # <nt>            -  nonterminal
+        "OPTNT",      # <optnt>{0.5}    -  optional nonterminal
+        "WHITESPACE", # all whitespace
+        "TERMINAL",   # any character
+        "SEPARATOR",  # |               - sign used to separate productions
+        "FINISHER",   # ;;;             - sign used to mark finish of a rule
+        "ASSIGNATOR", # ::=             - as in '<symbol> ::= <rule>'
+        "OPTWEIGHT",  # {0.5}           - used for weighting OPTNT
+        "WEIGHTATOR", # %%%             - sign for weighting part start 
+        "WEIGHTS"     # (1,2,3)         - tuple with weight
         )
+
+# the following are functions used by PLY lexer module
+# each function matches one of the tokens above
+# the RE string is the rule for matching tokens
 
 def t_WEIGHTATOR(t):
     r"\s*%%%\s*"
@@ -81,6 +85,8 @@ def t_error(t):
     raise TypeError("Unknown text '%s'" % (t.value,))
 
 lex.lex()
+
+# these are functions 
 
 def p_final_grammar(p):
     """
