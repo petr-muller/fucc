@@ -48,7 +48,7 @@ do
   rm -f $TESTCASE_DIRECTORY/*
   GRAMMAR_FILE=spitter/grammars/c_grammar_modified.g
 
-  GENERATOR="spitter/main.py $GRAMMAR_FILE 0  >$TESTCASE_DIRECTORY/tc$TESTCASE_NUMBER.c"
+  GENERATOR="spitter/main.py -g $GRAMMAR_FILE >$TESTCASE_DIRECTORY/tc$TESTCASE_NUMBER.c"
 
   BUILDER=builder/builder.py
 
