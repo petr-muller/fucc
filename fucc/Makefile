@@ -8,4 +8,5 @@ clean:
 
 pylint:
 	pylint --rcfile=.pylintrc --const-rgx='[a-z_][a-z0-9_]{2,30}$$' spitter/main.py --disable-msg=W0403
-	pylint --rcfile=.pylintrc spitter/grammar.py --disable-msg=W0403
+	pylint --rcfile=.pylintrc spitter/grammar.py
+	pylint --rcfile=.pylintrc spitter/logger.py

@@ -1,3 +1,5 @@
+"""This file provides a simple output interface for the rest of the module.
+It handles logging with priority treshold and various destinations of output"""
 #------------------------------------------------------------------------------#
 #    This file is part of fucc.                                                #
 #                                                                              #
@@ -11,30 +13,31 @@
 #    GNU General Public License for more details.                              #
 #                                                                              #
 #    You should have received a copy of the GNU General Public License         #
-#    along with fucc.  If not, see <http://www.gnu.org/licenses/>.             # 
+#    along with fucc.  If not, see <http://www.gnu.org/licenses/>.             #
 #------------------------------------------------------------------------------#
-import sys
 
 class Logger:
+  """Simple class, which plugs itself to other files and handles their output
+  according standard setting"""
   # o/output    - standard output for program
   # l/loger     - place where log should go
   # p/priority  - determines treshold of how serious messages should be logged
-  def __init__(self, o = None, l = None, p = 1 ):
-    self.output   = o
-    self.loger    = l
-    self.priority = p
+  def __init__(self, output = None, logger = None, priority = 1 ):
+    self.output   = output
+    self.loger    = logger
+    self.priority = priority
     self.indent = 0
   
-  # private method, determines if the instance is valid
   def _isValid(self):
+    """private method, determines if the instance is valid"""
     return self.output and self.loger
   
-  # spits something to output, whatever it is
   def spit(self, message):
+    """spits something to output, whatever it is"""
     print >> self.output, message,
 
-  # log by priority and indentation
   def log(self, priority, message, indent=0):
+    """log by priority and indentation"""
     if priority <= self.priority:
       if indent < 0:
         self.indent += indent
@@ -42,8 +45,8 @@ class Logger:
       if indent > 0:
         self.indent += indent
 
-  # close all file handlers
   def kill(self):
+    """close all file handlers"""
     if self._isValid():
       self.output.close()
       self.output.close()
