@@ -15,14 +15,14 @@
 #    along with fucc.  If not, see <http://www.gnu.org/licenses/>.             # 
 #------------------------------------------------------------------------------#
 
-from optparse import OptionParser
 from builder.builder import getConfs
-import sys
-import settings
+from optparse import OptionParser
 import os
+import settings
+import sys
 import tempfile
 
-TAG_NOT_FOUND = """Conf tag %s not provided in builder sttings
+TAG_NOT_FOUND = """Conf tag %s not provided in builder settings
 Please check your builder/settings file"""
 global DEBUG
 
@@ -61,8 +61,7 @@ if __name__ == "__main__":
   
   try:
     if not options.iterations:
-      raise OptError("Iterations have to be provided")
-  
+      raise OptError("Iterations have to be provided")  
     try:
       iterations = int(options.iterations)
     except ValueError:

@@ -15,24 +15,66 @@
 #    along with fucc.  If not, see <http://www.gnu.org/licenses/>.             # 
 #------------------------------------------------------------------------------#
 
-def getConfs(sfile ):
-  settings = open(sfile)
-  lines = settings.readlines()
-  settings.close()
-  
-  configs = {}
-  for line in lines:
-    if len(line) > 1 and line[0] != '#':
-      tag, config = line.split(':')
-      configs[tag.strip()] = config.strip()
-  return configs
+from os import path,kill
+from signal import SIGTERM
+from time import sleep
+import settings
+import subprocess
 
+global DEBUG
+
+def dbug(msg):
+  global DEBUG
+  if DEBUG:
+    print "DEBUG: %s" % msg
+    
+# a subclass which allows to be killed.
+# this is not portable on Windows, so if anyone will ever use this here, this
+# will have to be rewritten
+class KillablePopen(subprocess.Popen):
+  def kill(self, signal=SIGTERM):
+    dbug ("Killing")
+    kill(self.pid, signal)
+
+
+def runCommand(command, case_dir, name, timeout=None):  
+  outputfile=open(path.join(case_dir,name+"-%s" % settings.OUTPUT_SUFFIX), 'w')
+  resultfile=open(path.join(case_dir,name+"-%s" % settings.RESULT_SUFFIX), 'w')
+  process = KillablePopen(command, stdout=outputfile, stderr=outputfile)
+  still_time = True
+  timer = 0  
+  dbug(command)
+  
+  while (process.poll() is None) and (still_time):
+    if (timeout is not None) and timer >= timeout:
+      still_time=False       
+    sleep(1)
+    timer+=1
+  
+  if not still_time:
+    resultfile.write(settings.TIMEOUT_MSG)
+    process.kill()
+  else:
+    if process.poll() == 0:
+      resultfile.write(settings.RETCODE0_MSG)
+    else:
+      resultfile.write(settings.RETCODE_NOT0_MSG)
+  
+  resultfile.close()
+  outputfile.close()
+
+def getConfs():
+  configs = {}
+  for tag in settings.TAGS:
+    configs[tag['name']] = tag['command']  
+  return configs
 
 if __name__ == "__main__":
   import sys
   import os
   from optparse import OptionParser
 
+  DEBUG=True
   parser = OptionParser()
 
   parser.add_option("-t", "--testcase", dest="testcase", default="",
@@ -61,28 +103,22 @@ if __name__ == "__main__":
     print "Bad number of compilation tags"
     sys.exit(1)
 
-  actpath=os.path.abspath(os.path.dirname(sys.argv[0]))
-
-  configs = getConfs(actpath+"/settings")
+  configs = getConfs()
 
   for tag in TAGS:
     command = configs[tag]
     #replace the placeholders with source/directory
-    command = command.replace("SOURCE", case_dir+'/'+testcase)
-    command = command.replace("OUTPUT", case_dir+'/'+tag)
-
-    #build & log the binary
-    whole_command = "%s > %s/%s.build 2>&1" % (command, case_dir,tag)
-    built = os.system(whole_command)
-
-    build_result = open("%s/%s.buildresult" % (case_dir,tag),'w')
-
-    #if there was a successful build, run the binary inside a timer
-    if built == 0:
-      print >> build_result, "Successful compilation"
-      command = '%s/timer.sh %s/%s %s' % (actpath, case_dir,tag, int(options.ttl))
-      os.system(command)
-    else:
-      print >> build_result, "Unsuccessful compilation"
-
-    build_result.close()
+    command = command.replace("SOURCE", path.join(case_dir,testcase))
+    command = command.replace("OUTPUT", path.join(case_dir,tag))
+    
+    for action in settings.ACTIONS:
+      if action == "BUILD":
+        runCommand(command.split(' '), case_dir, '%s-build' % tag, 10)
+      elif action == "RUN":
+        runCommand('%s/%s' % (case_dir, tag), case_dir, '%s-run' % tag, options.ttl)
+      elif action in settings.ADDITIONAL.keys():
+        cmd = settings.ADDITIONAL[action]
+        cmd = cmd.replace("SOURCE", path.join(case_dir,testcase))
+        cmd = cmd.replace("OUTPUT", path.join(case_dir,tag))
+        cmd = cmd.split(' ')
+        runCommand(cmd, case_dir, "%s-%s" % (tag,action), 10)
