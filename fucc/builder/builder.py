@@ -54,14 +54,19 @@ def runCommand(command, case_dir, name, timeout=None):
   if not still_time:
     resultfile.write(settings.TIMEOUT_MSG)
     process.kill()
+    retcode = False
   else:
     if process.poll() == 0:
       resultfile.write(settings.RETCODE0_MSG)
+      retcode = True
     else:
       resultfile.write(settings.RETCODE_NOT0_MSG)
+      retcode = False
   
   resultfile.close()
   outputfile.close()
+
+  return retcode
 
 def getConfs():
   configs = {}
@@ -113,7 +118,8 @@ if __name__ == "__main__":
     
     for action in settings.ACTIONS:
       if action == "BUILD":
-        runCommand(command.split(' '), case_dir, '%s-build' % tag, 10)
+        if not runCommand(command.split(' '), case_dir, '%s-build' % tag, 10):
+          break
       elif action == "RUN":
         runCommand('%s/%s' % (case_dir, tag), case_dir, '%s-run' % tag, options.ttl)
       elif action in settings.ADDITIONAL.keys():

@@ -73,7 +73,7 @@ if __name__ == "__main__":
     if len(args) < 1:
       raise OptError("You have to provide at least one other conf tag")
 
-    configs = getConfs('builder/settings').keys()
+    configs = getConfs().keys()
     if options.golden not in configs:
       raise OptError(TAG_NOT_FOUND % options.golden)
 
