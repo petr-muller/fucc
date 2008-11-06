@@ -18,3 +18,12 @@
 GRAMMAR_FILE      = "spitter/grammars/c_grammar_modified.g"
 GENERATOR         = "spitter/main.py -g %s" % GRAMMAR_FILE
 TESTFILE_TEMPLATE = "tc%s.c"
+RESULTS = ("SUCCESS", "RUNTIME ANOMALY", "BUILD ANOMALY", "TERMINATION ANOMALY", "GOLDEN BUILD FAILED", "ZERO DIVISION")
+STORE = { "SUCCESS"             : False,
+          "RUNTIME ANOMALY"     : True,
+          "BUILD ANOMALY"       : True,
+          "TERMINATION ANOMALY" : True,
+          "GOLDEN BUILD FAILED" : True,
+          "ZERO DIVISION"       : False}
+
+STORE_COMMAND="./store.sh"

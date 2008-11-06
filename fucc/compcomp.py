@@ -24,12 +24,11 @@ import tempfile
 
 TAG_NOT_FOUND = """Conf tag %s not provided in builder settings
 Please check your builder/settings file"""
-global DEBUG
 
 def dbug(msg):
   global DEBUG
   if DEBUG:
-    print "DEBUG: %s" % msg
+    print "ADEBUG: %s" % msg
 
 def cleanDirectory(dirname):
   for root, dirs, files in os.walk(dirname, topdown=False):
@@ -93,22 +92,49 @@ if __name__ == "__main__":
   dbug("Testing dir:        %s" % test_dir)
   dbug("Results dir:        %s" % res_dir)
 
+  metrics = {}
+
   for run in xrange(iterations):
+    run +=1
     cleanDirectory(test_dir)
     testfile = settings.TESTFILE_TEMPLATE % run
-
+    
     GENERATOR=settings.GENERATOR
     GENERATOR="%s>%s/%s" % (GENERATOR,test_dir,testfile)
     dbug("Generator command:\n'%s'" % GENERATOR)
+    print ("\r" + ( "Testcase (%s/%s)" % (run, iterations)).ljust(20) + "GENERATING".ljust(15)),
+    sys.stdout.flush()
     os.system(GENERATOR)
 
     BUILDER="builder/builder.py --testcase %s --directory %s --ttl 5 %s %s" % (testfile, test_dir, options.golden, " ".join(args))
     dbug("Builder command:\n'%s'" % BUILDER)
+    print ("\r" + ("Testcase (%s/%s)" % (run, iterations)).ljust(20) + "BUILDING".ljust(15)),
+    sys.stdout.flush()
+    sys.stdout.flush()
     os.system(BUILDER)
-      
-#  dbug("Removing testing directory")
-#  cleanDirectory(test_dir)
-#  os.rmdir(test_dir)
-  dbug("Removing results directory")
-  cleanDirectory(res_dir)
-  os.rmdir(res_dir)
+
+    COMPARE="comparator/compare.sh %s %s %s" % (test_dir, options.golden, " ".join(args))
+    dbug("Compare command:\n'%s'" % COMPARE)
+    print ("\r" + ("Testcase (%s/%s)" % (run, iterations)).ljust(20) + "COMPARING".ljust(15)),
+    sys.stdout.flush()
+    sys.stdout.flush()
+    rc = os.system(COMPARE) / 256
+
+    result = settings.RESULTS[rc]
+    print ("\r" + ("Testcase (%s/%s)" % (run, iterations)).ljust(20) + result.ljust(15))
+    sys.stdout.flush()
+    if settings.STORE[result]:
+      os.system("%s %s %s %s '%s'" % (settings.STORE_COMMAND, run, test_dir, res_dir, result ))
+
+    if not metrics.has_key(result):
+      metrics[result] = 0
+
+    metrics[result] += 1
+
+print "*" * 60
+for res in metrics.keys():
+  print (res+": ").ljust(30) + str(metrics[res])
+print "*" * 60
+print "Your results are here: %s" % res_dir
+
+

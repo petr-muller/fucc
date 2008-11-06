@@ -25,18 +25,18 @@ res=0
 
 for testcase in $REST
 do
- if ! diff $TESTCASE_DIRECTORY/$GOLDEN.buildresult $TESTCASE_DIRECTORY/$testcase.buildresult > $TESTCASE_DIRECTORY/$GOLDEN-$testcase-build.diff 
+ if ! diff -u $TESTCASE_DIRECTORY/$GOLDEN-build-result $TESTCASE_DIRECTORY/$testcase-build-result > $TESTCASE_DIRECTORY/$GOLDEN-$testcase-build.diff 
  then
    res=2
- elif [ "`cat $TESTCASE_DIRECTORY/$GOLDEN.buildresult`" != "Successful compilation" ]
+ elif [ "`cat $TESTCASE_DIRECTORY/$GOLDEN-build-result`" != "Success" ]
  then
    res=4
- elif ! diff $TESTCASE_DIRECTORY/$GOLDEN.termination $TESTCASE_DIRECTORY/$testcase.termination > $TESTCASE_DIRECTORY/$GOLDEN-$testcase-termination.diff || [ "`cat $TESTCASE_DIRECTORY/$GOLDEN.termination`" != "TERMINATION: NORMAL" ]
+ elif ! diff -u $TESTCASE_DIRECTORY/$GOLDEN-run-result $TESTCASE_DIRECTORY/$testcase-run-result > $TESTCASE_DIRECTORY/$GOLDEN-$testcase-termination.diff || [ "`cat $TESTCASE_DIRECTORY/$GOLDEN-run-result`" == "Killed" ]
  then
    res=3
- elif ! diff $TESTCASE_DIRECTORY/$GOLDEN.output $TESTCASE_DIRECTORY/$testcase.output > $TESTCASE_DIRECTORY/$GOLDEN-$testcase-runtime.diff
+ elif ! diff -u $TESTCASE_DIRECTORY/$GOLDEN-run-output $TESTCASE_DIRECTORY/$testcase-run-output > $TESTCASE_DIRECTORY/$GOLDEN-$testcase-runtime.diff
  then
-   SIG8="`cat $TESTCASE_DIRECTORY/*.output | grep "signal number 8" | wc -l`" 
+   SIG8="`cat $TESTCASE_DIRECTORY/*-run-output | grep "signal number 8" | wc -l`" 
    if [ "$SIG8" != "0" ]
    then
      res=5

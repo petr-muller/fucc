@@ -56,11 +56,12 @@ def runCommand(command, case_dir, name, timeout=None):
     process.kill()
     retcode = False
   else:
-    if process.poll() == 0:
+    RC = process.poll()
+    if RC == 0:
       resultfile.write(settings.RETCODE0_MSG)
       retcode = True
     else:
-      resultfile.write(settings.RETCODE_NOT0_MSG)
+      resultfile.write("%s" % (settings.RETCODE_NOT0_MSG) )
       retcode = False
   
   resultfile.close()
@@ -79,7 +80,7 @@ if __name__ == "__main__":
   import os
   from optparse import OptionParser
 
-  DEBUG=True
+  DEBUG=False
   parser = OptionParser()
 
   parser.add_option("-t", "--testcase", dest="testcase", default="",

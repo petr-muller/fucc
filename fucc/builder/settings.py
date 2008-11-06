@@ -7,6 +7,7 @@ OUTPUT_SUFFIX="output"
 RESULT_SUFFIX="result"
 RETCODE0_MSG="Success"
 RETCODE_NOT0_MSG="Failure"
+TIMEOUT_MSG="Killed"
 
 TAGS = (
     { "name" : "GCC_O0",  "command" : "gcc -O0 SOURCE -o OUTPUT"},
