@@ -27,7 +27,12 @@ for testcase in $REST
 do
  if ! diff -u $TESTCASE_DIRECTORY/$GOLDEN-build-result $TESTCASE_DIRECTORY/$testcase-build-result > $TESTCASE_DIRECTORY/$GOLDEN-$testcase-build.diff 
  then
-   res=2
+   if cat $TESTCASE_DIRECTORY/$testcase-build-output | grep ICE || cat $TESTCASE_DIRECTORY/$testcase-build-output | grep "Internal Compiler Error"
+   then
+     res=6
+   else
+    res=2
+   fi
  elif [ "`cat $TESTCASE_DIRECTORY/$GOLDEN-build-result`" != "Success" ]
  then
    res=4
