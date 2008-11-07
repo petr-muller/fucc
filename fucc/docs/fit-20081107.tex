@@ -1,0 +1,207 @@
+\documentclass{beamer}
+
+\usepackage{beamerthemesplit}
+\usepackage[czech]{babel}
+\usepackage[utf8]{inputenc}
+\usetheme{Frankfurt}
+
+\title{Fuzz testování překladačů}
+\author{Petr Muller}
+\date{\today}
+
+\begin{document}
+
+\frame{\titlepage}
+
+\section[Obsah]{}
+\frame{\tableofcontents}
+\section{Úvod}
+\frame
+{
+  \frametitle{Pozadí práce}
+  \begin{block}{Práce}
+  \begin{itemize}
+    \item Bakalářská práce
+    \item Cílem bylo zjistit, zda je možné fuzz testování aplikovat na překladače
+    \item Byl implementován nástroj využívající tuto metodu
+  \end{itemize}
+  \end{block}
+}
+
+\section{Fuzz testování}
+\frame
+{
+  \frametitle{Metoda fuzz testování}
+  \begin{itemize}
+    \item Jednoduchá automatizovaná metoda pro testování robustnosti aplikací
+    \item Princip: \begin{itemize}
+      \item Jako vstup programu se použije (pseudo) náhodný řetezec znaků
+      \item Sleduje se, zda program zvládne takový stav zpracovat
+      \item Pokud program zareaguje, testem prošel. Pokud ne (pád, zacyklení), pak neprošel
+      \end{itemize}
+    \item Metoda zvládá rychle odhalit nedostatečné ošetření vstupu
+    \item Užitečné při testování, jak program nakládá s nedůvěryhodnými (vzdálenými) vstupy
+    \item Nedostatečné ošetření vstupu je hlavním zdrojem bezpečnostních problémů software
+  \end{itemize}
+}
+
+\frame
+{
+  \frametitle{Typy fuzz testování}
+  \begin{block}{Čistý fuzz}
+  \begin{itemize}
+    \item Použije se zcela náhodný řetězec
+    \item Triviální implementace
+    \item Testuje pouze \"povrch\" programu
+  \end{itemize}
+  \end{block}
+  \begin{block}{Fuzzing formátu}
+  \begin{itemize}
+    \item Se používá v případě, že vstup je v nějakém jazyce nebo protokolu (HTML, prog. jazyk...)
+    \item Vstupem je náhodná, avšak gramaticky správná věta jazyka vstupu
+    \item Vstup projde "hlouběji" do testovaného programu
+  \end{itemize}
+  \end{block}
+}
+
+\frame
+{
+  \frametitle{Fuzz testování překladačů}
+  \begin{block}{Čistý fuzz}
+  \begin{itemize}
+  \item Nevhodné, testuje pouze lexikální analyzátor
+  \end{itemize}
+  \end{block}
+  \begin{block}{Fuzz jazyka C}
+  \begin{itemize}
+    \item Náhodné, avšak validní programy v jazyce C
+    \item Testují odolnost velké části kódu překladače
+    \item Je možné touto metodou nalézt chyby, které se projevují v čase překladu
+    \end{itemize}
+  \end{block}
+}
+
+\frame
+{
+  \frametitle{Chyby v překladačích}
+  \begin{block}{Méně závažné}
+  Nebrání správnému překladu (chybějící/přebývající varování, výkonnostní problémy)
+  \end{block}
+  \begin{block}{Středně závažné}
+  \begin{itemize}
+  \item Projevují se při překladu
+  \item Brání překladu (odmítnutí platného kódu, ICE\footnote{Internal Compiler Error})
+  \end{itemize}
+  \end{block}
+  \begin{block}{Velmi závažné chyby}
+  \begin{itemize}
+  \item Projevují se až ve špatném chování výsledného programu
+  \item Obtížné odhalit pravou příčinu (přijetí neplatného kódu, generování špatného kódu)
+  \end{itemize}
+  \end{block}
+}
+
+\frame
+{
+  \frametitle{Hledání nejzávažnějších chyb pomocí fuzz testování}
+  \begin{block}{ }
+  \begin{itemize}
+  \item Není možné určit konkrétní správný výstup překladače
+  \item Správnost výstupu překladače je dána správností výstupu výsledného programu
+  \item Jak určit správnost výstupu náhodného programu?
+  \end{itemize}
+  \end{block}
+  \begin{block}{Fuzz testování překladače s porovnáváním}
+  
+  Náhodný program musí mít deterministický výstup
+  \scriptsize{
+  \begin{enumerate}
+    \item Program je přeložen dvakrát: testovaným a referenčním překladačem
+    \item Oba přeložené programy se spustí a porovná se jejich výstup
+    \item Je nepravděpodobné, že se stejná chyba vyskytuje v obou překladačích
+    \item Pokud se výstupy liší, pak se v jednom z překladačů nachází chyba
+    \end{enumerate}
+  }
+  \end{block}
+}
+
+\section{Stavba generátoru vět jazyka C}
+\frame
+{
+}
+
+
+\section{Nástroj fucc}
+\frame
+{
+\frametitle{fucc - Fuzzing C Compiler}
+  \begin{block}{Nástroj pro realizaci popsané metody}
+  \begin{itemize}
+    \item Generátor náhodných vět 
+    \item Překlad oběma překladači
+    \item Tvorba potřebných výstupů
+    \item Porovnávání výstupů
+  \end{itemize}
+  \end{block}
+
+  \begin{block}{Projekt}
+  \begin{itemize}
+    \item Implementováno v Pythonu + shell scripty
+    \item Open-source, repozitář http://git.afri.cz/git/fucc.git
+  \end{itemize}
+  \end{block} 
+}
+
+\frame
+{
+  \frametitle{Aktuální vlastnosti}
+  \begin{block}{Vlastnosti}
+    \begin{itemize}
+      \item Generátor je schopen tvořit platné, ne zbytečně složité programy
+      \item Některé části lze konfigurovat
+      \item Hledá rozdíly ve výsledku překladu, výstupu a ukončení programu
+      \item Je schopen rozeznat některé obvyklé chyby generátoru
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{Výsledky}
+  \begin{itemize}
+    \item Program byl testován pouze jednou, nalezeno bylo cca 10 chyb v TCC, a dvou verzích GCC
+  \end{itemize}
+  \end{block}
+}
+
+\frame
+{
+  \frametitle{Budoucí vývoj}
+  \begin{block}{Odstranění chyb}
+    \begin{itemize}
+    \item Odstranit některé případy vygenerovaného neplatného kódu
+    \item Lépe integrovat jednotlivé součásti
+    \item Zredukovat jazykově závislou část generátoru
+    \end{itemize}
+  \end{block}
+  \begin{block}{Vlastnosti}
+  \begin{itemize}
+  \item Lepší konfigurovatelnost porovnávání
+  \item Usnadnění ověřování chyb
+  \item Podpora regresního testování
+  \item Grafické uživatelské rozhraní
+  \end{itemize}
+  \end{block}
+}
+
+\section{Závěr}
+\frame
+{
+  \frametitle{Závěr}
+  \begin{block}{Závěr}
+  \center{
+  Otázky?
+
+  Děkuji za pozornost!
+  }
+  \end{block}
+}
+
+\end{document}
